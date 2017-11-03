@@ -9,7 +9,7 @@ import router from './routes';
 const app = express();
 const port = process.env.PORT || 8080;
 
-mongoose.Promise = global.Promise;
+mongoose.Promise = Promise;
 mongoose.connection.openUri(config.db);
 
 const db = mongoose.connection;

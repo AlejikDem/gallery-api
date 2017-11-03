@@ -1,9 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
 
-const photoSchema = new Schema({
+export const photoSchema = new Schema({
   url: String,
-  // category: Schema.ObjectId,
-  // collection: Schema.ObjectId,
+  category: { type: Schema.Types.ObjectId, ref: 'Category'},
+  session: { type: Schema.Types.ObjectId, ref: 'Session'},
   createdAt: { type : Date, default: Date.now },
   updatedAt: { type : Date, default: Date.now }
 });
