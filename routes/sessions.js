@@ -15,7 +15,8 @@ export const getSessionById = (req, res) => {
 export const createSession = (req, res) => {
   const session = new Session(req.body);
 
-  session.save(req.body)
+  session
+    .save(req.body)
     .then(session => res.send(session))
     .catch(err => res.send(err));
 };
@@ -25,8 +26,7 @@ export const editSession = (req, res) => {
     .then(session => {
       const newSession = Object.assign(session, req.body);
 
-      newSession.save()
-        .then(session => res.send(session));
+      newSession.save().then(session => res.send(session));
     })
     .catch(err => res.send(err));
 };
