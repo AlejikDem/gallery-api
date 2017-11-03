@@ -6,6 +6,12 @@ export const getSessions = (req, res) => {
     .catch(err => res.send(err));
 };
 
+export const getSessionById = (req, res) => {
+  Session.findById(req.params.id)
+    .then(session => res.send(session))
+    .catch(err => res.send(err));
+};
+
 export const createSession = (req, res) => {
   const session = new Session(req.body);
 
