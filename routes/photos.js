@@ -1,7 +1,7 @@
 import Photo from '../models/Photo';
 
 export const getPhotos = (req, res) => {
-  Photo.find().exec()
-    .then(data => res.send(data))
-    .catch(err => conosle.log(err));
+  Photo.find()
+    .then(photos => res.json(photos))
+    .catch(err => res.send(err));
 };
