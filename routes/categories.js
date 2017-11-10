@@ -33,6 +33,6 @@ export const editCategory = (req, res) => {
 
 export const deleteCategory = (req, res) => {
   Category.findOneAndRemove({ _id: req.params.id })
-    .then(data => res.send(data))
+    .then(data => res.send({ message: 'Category has been deleted' }))
     .catch(err => res.send(err));
 };
