@@ -1,7 +1,12 @@
+import shortid from 'shortid';
 import mongoose, { Schema } from 'mongoose';
 
 export const photoSchema = new Schema({
-  url: String,
+  _id: {
+    type: String,
+    default: shortid.generate(),
+  },
+  name: { type: String },
   category: { type: Schema.Types.ObjectId, ref: 'Category' },
   session: { type: Schema.Types.ObjectId, ref: 'Session' },
   createdAt: { type: Date, default: Date.now },

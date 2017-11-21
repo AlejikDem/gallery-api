@@ -1,6 +1,7 @@
 import { Router } from 'express';
+import multer from 'multer';
 
-import { getPhotos, createPhoto, editPhoto, deletePhoto } from './photos';
+import { getPhotos, addPhotos, editPhoto, deletePhoto } from './photos';
 import {
   getSessions,
   getSessionById,
@@ -17,10 +18,11 @@ import {
 } from './categories';
 
 const router = Router();
+const photoMulter = multer().array('photo');
 
 router
   .get('/api/photos', getPhotos)
-  .post('/api/photos', createPhoto)
+  .post('/api/photos', photoMulter, addPhotos)
   .put('/api/photos/:id', editPhoto)
   .delete('/api/photos/:id', deletePhoto);
 
