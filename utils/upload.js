@@ -1,16 +1,16 @@
 import shortid from 'shortid';
 import s3 from '../aws';
 
-export const prepareFilesForUpload = files => {
+export const prepareFilesForUpload = (files, session) => {
+  const sessionName = session ? session.name + '/' : '';
   return files.map(photo => {
     const uniqId = shortid.generate();
     const fileName = photo.originalname;
     const extension = fileName.substr(fileName.lastIndexOf('.') + 1);
     const newName = `${uniqId}.${extension}`;
-    const path = `fun/${newName}`;
+    const path = sessionName + newName;
 
     return {
-      id: uniqId,
       name: newName,
       extension,
       key: path,
@@ -19,10 +19,11 @@ export const prepareFilesForUpload = files => {
   });
 };
 
-export const prepareFilesForSave = files =>
+export const prepareFilesForSave = (files, category, session) =>
   files.map(file => ({
-    _id: file.id,
     name: file.name,
+    category: category && category._id,
+    session: session && session._id,
   }));
 
 export const getContentType = extension => {

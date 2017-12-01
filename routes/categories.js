@@ -2,6 +2,7 @@ import Category from '../models/Category';
 
 export const getCategories = (req, res) => {
   Category.find()
+    .populate('photos')
     .then(data => res.send(data))
     .catch(err => res.send(err));
 };
