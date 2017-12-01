@@ -13,26 +13,19 @@ export const getSessionById = (req, res) => {
 };
 
 export const createSession = (req, res) => {
-  const session = new Session(req.body);
-
-  session
-    .save(req.body)
+  Session.create(req.body)
     .then(session => res.send(session))
     .catch(err => res.send(err));
 };
 
 export const editSession = (req, res) => {
-  Session.findById(req.params.id)
-    .then(session => {
-      const newSession = Object.assign(session, req.body);
-
-      newSession.save().then(session => res.send(session));
-    })
+  Session.findByIdAndUpdate(req.params.id, req.body)
+    .then(session => res.send(session))
     .catch(err => res.send(err));
 };
 
 export const deleteSession = (req, res) => {
   Session.findOneAndRemove({ _id: req.params.id })
-    .then(session => res.send(session))
+    .then(session => res.send({ message: 'Session has been deleted' }))
     .catch(err => res.send(err));
 };

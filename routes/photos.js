@@ -27,6 +27,7 @@ const uploadParams = {
 export const getPhotos = (req, res) => {
   Photo.find()
     .populate('category')
+    .populate('session')
     .then(photos => res.json(photos))
     .catch(err => res.send(err));
 };
@@ -46,17 +47,7 @@ export const addPhotos = (req, res) => {
       );
 
       Photo.insertMany(filesPreparedForSave)
-        .then(data => {
-          const photos = data.map(item => item._id);
-          if (category) {
-            Category.findByIdAndUpdate(parsedCategory._id, {
-              $push: {
-                photos: { $each: photos },
-              },
-            }).catch(err => res.status(500).send(err));
-          }
-          res.send(data);
-        })
+        .then(data => res.send(data))
         .catch(err => res.status(500).send(err));
     })
     .catch(err => res.status(500).send(err));
