@@ -33,7 +33,7 @@ export const getPhotos = (req, res) => {
 
 export const addPhotos = (req, res) => {
   const { files, body: { category, session } } = req;
-  const parsedCategory = JSON.parse(category);
+  const parsedCategory = category && JSON.parse(category);
   const parsedSession = session && JSON.parse(session);
   const filesPreparedForUpload = prepareFilesForUpload(files, parsedSession);
 
@@ -48,14 +48,14 @@ export const addPhotos = (req, res) => {
       Photo.insertMany(filesPreparedForSave)
         .then(data => {
           const photos = data.map(item => item._id);
-
-          Category.findByIdAndUpdate(parsedCategory._id, {
-            $push: {
-              photos: { $each: photos },
-            },
-          })
-            .then(data => res.send(data))
-            .catch(err => res.status(500).send(err));
+          if (category) {
+            Category.findByIdAndUpdate(parsedCategory._id, {
+              $push: {
+                photos: { $each: photos },
+              },
+            }).catch(err => res.status(500).send(err));
+          }
+          res.send(data);
         })
         .catch(err => res.status(500).send(err));
     })
