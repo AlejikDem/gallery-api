@@ -1,4 +1,5 @@
 import Photo from '../models/Photo';
+import Category from '../models/Category';
 
 import {
   prepareFilesForUpload,
@@ -11,33 +12,51 @@ const uploadParams = {
   Bucket: 'giska-gallery',
 };
 
-const copyParams = {
-  ACL: 'public-read',
-  Bucket: 'giska-gallery',
-  CopySource: '/giska-gallery/fun/first.jpg',
-  Key: 'second/first.jpg',
-};
+// const copyParams = {
+//   ACL: 'public-read',
+//   Bucket: 'giska-gallery',
+//   CopySource: '/giska-gallery/fun/first.jpg',
+//   Key: 'second/first.jpg',
+// };
 
-const deleteParams = {
-  Bucket: 'giska-gallery',
-  Key: 'fun/first.jpg',
-};
+// const deleteParams = {
+//   Bucket: 'giska-gallery',
+//   Key: 'fun/first.jpg',
+// };
 
 export const getPhotos = (req, res) => {
   Photo.find()
+    .populate('category')
     .then(photos => res.json(photos))
     .catch(err => res.send(err));
 };
 
 export const addPhotos = (req, res) => {
-  const filesPreparedForUpload = prepareFilesForUpload(req.files);
+  const { files, body: { category, session } } = req;
+  const parsedCategory = JSON.parse(category);
+  const parsedSession = session && JSON.parse(session);
+  const filesPreparedForUpload = prepareFilesForUpload(files, parsedSession);
 
   uploadPhotos(filesPreparedForUpload, uploadParams)
     .then(() => {
-      const filesPreparedForSave = prepareFilesForSave(filesPreparedForUpload);
+      const filesPreparedForSave = prepareFilesForSave(
+        filesPreparedForUpload,
+        parsedCategory,
+        parsedSession,
+      );
 
       Photo.insertMany(filesPreparedForSave)
-        .then(data => res.send(data))
+        .then(data => {
+          const photos = data.map(item => item._id);
+
+          Category.findByIdAndUpdate(parsedCategory._id, {
+            $push: {
+              photos: { $each: photos },
+            },
+          })
+            .then(data => res.send(data))
+            .catch(err => res.status(500).send(err));
+        })
         .catch(err => res.status(500).send(err));
     })
     .catch(err => res.status(500).send(err));
