@@ -2,7 +2,6 @@ import Category from '../models/Category';
 
 export const getCategories = (req, res) => {
   Category.find()
-    .populate('photos')
     .then(data => res.send(data))
     .catch(err => res.send(err));
 };
@@ -14,21 +13,14 @@ export const getCategoryById = (req, res) => {
 };
 
 export const createCategory = (req, res) => {
-  const category = new Category(req.body);
-
-  category
-    .save(req.body)
+  Category.create(req.body)
     .then(data => res.send(data))
     .catch(err => res.send(err));
 };
 
 export const editCategory = (req, res) => {
-  Category.findById(req.params.id)
-    .then(data => {
-      const newCategory = Object.assign(data, req.body);
-
-      newCategory.save().then(data => res.send(data));
-    })
+  Category.findByIdAndUpdate(req.params.id, req.body)
+    .then(data => res.send(data))
     .catch(err => res.send(err));
 };
 
