@@ -66,5 +66,5 @@ export const editPhoto = (req, res) => {
 export const deletePhoto = (req, res) => {
   Category.findOneAndRemove({ _id: req.params.id })
     .then(data => res.send(data))
-    .catch(err => res.send(err));
+    .catch(err => res.status(500).send(err));
 };
