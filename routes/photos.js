@@ -25,7 +25,15 @@ const uploadParams = {
 // };
 
 export const getPhotos = (req, res) => {
-  Photo.find()
+  const { filter, page } = req.query;
+  const parsedFilter = filter || JSON.parse(filter);
+  const limit = 20;
+  const options = {
+    skip: page ? (page - 1) * limit : 0,
+    limit,
+  };
+
+  Photo.find(parsedFilter, null, options)
     .populate('category')
     .populate('session')
     .then(photos => res.json(photos))
