@@ -26,10 +26,10 @@ const uploadParams = {
 
 export const getPhotos = (req, res) => {
   const { filter, page } = req.query;
-  const parsedFilter = filter || JSON.parse(filter);
+  const parsedFilter = JSON.parse(filter);
   const limit = 20;
   const options = {
-    skip: page ? (page - 1) * limit : 0,
+    skip: (page - 1) * limit,
     limit,
   };
 
