@@ -1,5 +1,7 @@
 import Photo from '../models/Photo';
 import Category from '../models/Category';
+import config from '../config';
+import s3 from '../aws';
 
 import {
   prepareFilesForUpload,
@@ -7,9 +9,11 @@ import {
   uploadPhotos,
 } from '../utils/upload';
 
+import { makeDeletePhotosParams } from '../utils/delete';
+
 const uploadParams = {
   ACL: 'public-read',
-  Bucket: 'giska-gallery',
+  Bucket: config.bucketName,
 };
 
 // const copyParams = {
@@ -19,10 +23,9 @@ const uploadParams = {
 //   Key: 'second/first.jpg',
 // };
 
-// const deleteParams = {
-//   Bucket: 'giska-gallery',
-//   Key: 'fun/first.jpg',
-// };
+const deleteParams = {
+  Bucket: config.bucketName,
+};
 
 export const getPhotos = (req, res) => {
   const { filter, page } = req.query;
@@ -72,7 +75,18 @@ export const editPhoto = (req, res) => {
 };
 
 export const deletePhoto = (req, res) => {
-  Category.findOneAndRemove({ _id: req.params.id })
-    .then(data => res.send(data))
+  const { ids } = req.body;
+
+  Photo.find({ _id: { $in: ids } })
+    .populate('session')
+    .then(photos => {
+      const deletePhotoParams = makeDeletePhotosParams(photos, deleteParams);
+      s3.deleteObjects(deletePhotoParams, function(err, data) {
+        if (err) res.status(500).send(err);
+        Photo.remove({ _id: { $in: ids } })
+          .then(() => res.send({ message: 'Ok' }))
+          .catch(err => res.status(500).send(err));
+      });
+    })
     .catch(err => res.status(500).send(err));
 };

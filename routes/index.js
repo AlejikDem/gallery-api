@@ -23,8 +23,8 @@ const photoMulter = multer().array('photo');
 router
   .get('/api/photos', getPhotos)
   .post('/api/photos', photoMulter, addPhotos)
-  .put('/api/photos/:id', editPhoto)
-  .delete('/api/photos/:id', deletePhoto);
+  .put('/api/photos', editPhoto)
+  .delete('/api/photos', deletePhoto);
 
 router
   .get('/api/sessions', getSessions)
