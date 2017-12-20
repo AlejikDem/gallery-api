@@ -1,5 +1,6 @@
 import Photo from '../models/Photo';
 import Category from '../models/Category';
+import Session from '../models/Session';
 import config from '../config';
 import s3 from '../aws';
 
@@ -64,14 +65,29 @@ export const addPhotos = (req, res) => {
     .catch(err => res.status(500).send(err));
 };
 
-export const editPhoto = (req, res) => {
-  Photo.findById(req.params.id)
-    .then(data => {
-      const newPhoto = Object.assign(data, req.body);
+export const editPhotos = (req, res) => {
+  const { ids, field: { type, obj } } = req.body;
 
-      newPhoto.save().then(data => res.send(data));
-    })
-    .catch(err => res.send(err));
+  if (type === 'category') {
+    editCategory(res, ids, obj);
+  } else {
+    editSession(res, ids, obj);
+  }
+  // Photo.findById(req.params.id)
+  //   .then(data => {
+  //     const newPhoto = Object.assign(data, req.body);
+
+  //     newPhoto.save().then(data => res.send(data));
+  //   })
+  //   .catch(err => res.send(err));
+};
+
+const editCategory = (res, ids, category) => {
+  res.send('hello');
+};
+
+const editSession = (res, ids, session) => {
+  res.send('hello2');
 };
 
 export const deletePhoto = (req, res) => {
