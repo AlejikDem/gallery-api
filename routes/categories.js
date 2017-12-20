@@ -11,6 +11,7 @@ export const getCategoryById = (req, res) => {
   Category.findById(req.params.id)
     .then(category => {
       Photo.find({ category: category._id })
+        .populate('session')
         .then(photos => {
           res.send({
             instance: category,
