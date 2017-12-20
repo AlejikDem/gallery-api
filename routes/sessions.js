@@ -11,6 +11,7 @@ export const getSessionById = (req, res) => {
   Session.findById(req.params.id)
     .then(session => {
       Photo.find({ session: session._id })
+        .populate('session')
         .then(photos => {
           res.send({
             instance: session,
