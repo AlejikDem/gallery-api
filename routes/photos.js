@@ -90,7 +90,7 @@ const editSession = (res, ids, session) => {
   res.send('hello2');
 };
 
-export const deletePhoto = (req, res) => {
+export const deletePhotos = (req, res) => {
   const { ids } = req.body;
 
   Photo.find({ _id: { $in: ids } })
