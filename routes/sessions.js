@@ -1,4 +1,5 @@
 import Session from '../models/Session';
+import Photo from '../models/Photo';
 
 export const getSessions = (req, res) => {
   Session.find()
@@ -8,7 +9,16 @@ export const getSessions = (req, res) => {
 
 export const getSessionById = (req, res) => {
   Session.findById(req.params.id)
-    .then(session => res.send(session))
+    .then(session => {
+      Photo.find({ session: session._id })
+        .then(photos => {
+          res.send({
+            instance: session,
+            photos,
+          });
+        })
+        .catch(err => res.send(err));
+    })
     .catch(err => res.send(err));
 };
 

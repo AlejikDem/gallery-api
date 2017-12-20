@@ -1,4 +1,5 @@
 import Category from '../models/Category';
+import Photo from '../models/Photo';
 
 export const getCategories = (req, res) => {
   Category.find()
@@ -8,7 +9,16 @@ export const getCategories = (req, res) => {
 
 export const getCategoryById = (req, res) => {
   Category.findById(req.params.id)
-    .then(data => res.send(data))
+    .then(category => {
+      Photo.find({ category: category._id })
+        .then(photos => {
+          res.send({
+            instance: category,
+            photos,
+          });
+        })
+        .catch(err => res.send(err));
+    })
     .catch(err => res.send(err));
 };
 
