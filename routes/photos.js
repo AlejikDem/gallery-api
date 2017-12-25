@@ -9,20 +9,13 @@ import {
   prepareFilesForSave,
   uploadPhotos,
 } from '../utils/upload';
-
+import { copyPhotos } from '../utils/edit';
 import { makeDeletePhotosParams } from '../utils/delete';
 
 const uploadParams = {
   ACL: 'public-read',
   Bucket: config.bucketName,
 };
-
-// const copyParams = {
-//   ACL: 'public-read',
-//   Bucket: 'giska-gallery',
-//   CopySource: '/giska-gallery/fun/first.jpg',
-//   Key: 'second/first.jpg',
-// };
 
 const deleteParams = {
   Bucket: config.bucketName,
@@ -65,29 +58,39 @@ export const addPhotos = (req, res) => {
     .catch(err => res.status(500).send(err));
 };
 
+//Нада буде поміняти місцями - спочатку aws - потім база
 export const editPhotos = (req, res) => {
   const { ids, field: { type, obj } } = req.body;
+  Photo.find({ _id: { $in: ids } })
+    .populate('session')
+    .then(photos => {
+      if (type === 'session') {
+        copyPhotos(photos, obj, uploadParams)
+          .then(() => {
+            const deletePhotoParams = makeDeletePhotosParams(
+              photos,
+              deleteParams,
+            );
 
-  if (type === 'category') {
-    editCategory(res, ids, obj);
-  } else {
-    editSession(res, ids, obj);
-  }
-  // Photo.findById(req.params.id)
-  //   .then(data => {
-  //     const newPhoto = Object.assign(data, req.body);
-
-  //     newPhoto.save().then(data => res.send(data));
-  //   })
-  //   .catch(err => res.send(err));
-};
-
-const editCategory = (res, ids, category) => {
-  res.send('hello');
-};
-
-const editSession = (res, ids, session) => {
-  res.send('hello2');
+            s3.deleteObjects(deletePhotoParams, function(err, data) {
+              if (err) res.status(500).send(err);
+              photos.forEach(photo => {
+                photo[type] = obj ? obj._id : null;
+                photo.save();
+              });
+              res.send({ message: 'Ok' });
+            });
+          })
+          .catch(err => res.status(500).send(err));
+      } else {
+        photos.forEach(photo => {
+          photo[type] = obj ? obj._id : null;
+          photo.save();
+        });
+        res.send({ message: 'Ok' });
+      }
+    })
+    .catch(err => res.status(500).send(err));
 };
 
 export const deletePhotos = (req, res) => {
