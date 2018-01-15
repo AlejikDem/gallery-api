@@ -30,10 +30,13 @@ export const getSessionById = async (req, res) => {
   }
 };
 
-export const createSession = (req, res) => {
-  Session.create(req.body)
-    .then(session => res.send(session))
-    .catch(err => res.send(err));
+export const createSession = async (req, res) => {
+  try {
+    const session = await Session.create(req.body);
+    res.send(session);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
 export const editSession = (req, res) => {
