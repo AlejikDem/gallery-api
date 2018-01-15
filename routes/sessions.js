@@ -1,5 +1,10 @@
+import s3 from '../aws';
+
 import Session from '../models/Session';
 import Photo from '../models/Photo';
+
+import { deleteParams } from '../config';
+import { makeDeletePhotosParams } from '../utils/delete';
 
 export const getSessions = async (req, res) => {
   try {
@@ -45,8 +50,21 @@ export const editSession = (req, res) => {
     .catch(err => res.send(err));
 };
 
-export const deleteSession = (req, res) => {
-  Session.findOneAndRemove({ _id: req.params.id })
-    .then(session => res.send({ message: 'Session has been deleted' }))
-    .catch(err => res.send(err));
+export const deleteSession = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const session = await Session.findOneAndRemove({ _id: req.params.id });
+    const photos = await Photo.find({ session: id });
+    const deletePhotoParams = makeDeletePhotosParams(
+      photos,
+      deleteParams,
+      session.name,
+    );
+    await s3.deleteObjects(deletePhotoParams).promise();
+    await Photo.remove({ session: id });
+
+    res.send({ message: 'Session has been deleted' });
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };

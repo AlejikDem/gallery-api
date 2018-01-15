@@ -1,7 +1,7 @@
 import Photo from '../models/Photo';
 import Category from '../models/Category';
 import Session from '../models/Session';
-import config from '../config';
+import { uploadParams, deleteParams } from '../config';
 import s3 from '../aws';
 
 import {
@@ -11,15 +11,6 @@ import {
 } from '../utils/upload';
 import { copyPhotos } from '../utils/edit';
 import { makeDeletePhotosParams } from '../utils/delete';
-
-const uploadParams = {
-  ACL: 'public-read',
-  Bucket: config.bucketName,
-};
-
-const deleteParams = {
-  Bucket: config.bucketName,
-};
 
 export const getPhotos = (req, res) => {
   const { filter, page } = req.query;
