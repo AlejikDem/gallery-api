@@ -17,21 +17,17 @@ export const getSessions = async (req, res) => {
   }
 };
 
-export const getSessionById = (req, res) => {
-  Session.findById(req.params.id)
-    .then(session => {
-      Photo.find({ session: session._id })
-        .populate('session')
-        .populate('category')
-        .then(photos => {
-          res.send({
-            instance: session,
-            photos,
-          });
-        })
-        .catch(err => res.send(err));
-    })
-    .catch(err => res.send(err));
+export const getSessionById = async (req, res) => {
+  try {
+    const session = await Session.findById(req.params.id);
+    const photos = await Photo.find({ session: session._id })
+      .populate('session')
+      .populate('category');
+
+    res.send({ instance: session, photos });
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
 export const createSession = (req, res) => {
