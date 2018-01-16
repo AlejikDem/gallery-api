@@ -10,41 +10,45 @@ import {
 import { copyPhotos } from '../utils/edit';
 import { makeDeletePhotosParams } from '../utils/delete';
 
-export const getPhotos = (req, res) => {
-  const { filter, page } = req.query;
-  const parsedFilter = JSON.parse(filter);
-  const limit = 20;
-  const options = {
-    skip: (page - 1) * limit,
-    limit,
-  };
+export const getPhotos = async (req, res) => {
+  try {
+    const { filter, page } = req.query;
+    const parsedFilter = JSON.parse(filter);
+    const limit = 20;
+    const options = {
+      skip: (page - 1) * limit,
+      limit,
+    };
 
-  Photo.find(parsedFilter, null, options)
-    .populate('category')
-    .populate('session')
-    .then(photos => res.json(photos))
-    .catch(err => res.send(err));
+    const photos = await Photo.find(parsedFilter, null, options)
+      .populate('category')
+      .populate('session');
+
+    res.send(photos);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
-export const addPhotos = (req, res) => {
-  const { files, body: { category, session } } = req;
-  const parsedCategory = category && JSON.parse(category);
-  const parsedSession = session && JSON.parse(session);
-  const filesPreparedForUpload = prepareFilesForUpload(files, parsedSession);
+export const addPhotos = async (req, res) => {
+  try {
+    const { files, body: { category, session } } = req;
+    const parsedCategory = category && JSON.parse(category);
+    const parsedSession = session && JSON.parse(session);
+    const filesPreparedForUpload = prepareFilesForUpload(files, parsedSession);
 
-  uploadPhotos(filesPreparedForUpload, uploadParams)
-    .then(() => {
-      const filesPreparedForSave = prepareFilesForSave(
-        filesPreparedForUpload,
-        parsedCategory,
-        parsedSession,
-      );
+    await uploadPhotos(filesPreparedForUpload, uploadParams);
+    const filesPreparedForSave = prepareFilesForSave(
+      filesPreparedForUpload,
+      parsedCategory,
+      parsedSession,
+    );
 
-      Photo.insertMany(filesPreparedForSave)
-        .then(data => res.send(data))
-        .catch(err => res.status(500).send(err));
-    })
-    .catch(err => res.status(500).send(err));
+    const photos = await Photo.insertMany(filesPreparedForSave);
+    res.send(photos);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
 //Нада буде поміняти місцями - спочатку aws - потім база
