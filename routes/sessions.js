@@ -4,8 +4,9 @@ import s3 from '../aws';
 import Session from '../models/Session';
 import Photo from '../models/Photo';
 
-import { deleteParams } from '../config';
+import { uploadParams, deleteParams } from '../config';
 import { makeDeletePhotosParams } from '../utils/delete';
+import { copyPhotos } from '../utils/edit';
 
 export const getSessions = async (req, res) => {
   try {
@@ -45,10 +46,33 @@ export const createSession = async (req, res) => {
   }
 };
 
-export const editSession = (req, res) => {
-  Session.findByIdAndUpdate(req.params.id, req.body)
-    .then(session => res.send(session))
-    .catch(err => res.send(err));
+export const editSession = async (req, res) => {
+  try {
+    const newSession = req.body;
+    const session = await Session.findById(req.params.id);
+
+    if (newSession.name !== session.name) {
+      const photos = await Photo.find({ session: session._id });
+
+      if (photos.length) {
+        await copyPhotos(photos, newSession.name, uploadParams, session.name);
+        const deletePhotoParams = makeDeletePhotosParams(
+          photos,
+          deleteParams,
+          session.name,
+        );
+
+        await s3.deleteObjects(deletePhotoParams).promise();
+      }
+    }
+
+    session.name = newSession.name;
+    session.description = newSession.description;
+    await session.save();
+    res.send(session);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
 export const deleteSession = async (req, res) => {
