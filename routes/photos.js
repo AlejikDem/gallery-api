@@ -51,54 +51,44 @@ export const addPhotos = async (req, res) => {
   }
 };
 
-//Нада буде поміняти місцями - спочатку aws - потім база
-export const editPhotos = (req, res) => {
-  const { ids, field: { type, obj } } = req.body;
-  Photo.find({ _id: { $in: ids } })
-    .populate('session')
-    .then(photos => {
-      if (type === 'session') {
-        copyPhotos(photos, obj.name, uploadParams)
-          .then(() => {
-            const deletePhotoParams = makeDeletePhotosParams(
-              photos,
-              deleteParams,
-            );
+export const editPhotos = async (req, res) => {
+  try {
+    const { ids, field: { type, obj } } = req.body;
+    const photos = await Photo.find({ _id: { $in: ids } }).populate('session');
+    if (type === 'session') {
+      await copyPhotos(photos, obj.name, uploadParams);
 
-            s3.deleteObjects(deletePhotoParams, function(err) {
-              if (err) res.status(500).send(err);
-              photos.forEach(photo => {
-                photo[type] = obj ? obj._id : null;
-                photo.save();
-              });
-              res.send({ message: 'Ok' });
-            });
-          })
-          .catch(err => res.status(500).send(err));
-      } else {
-        photos.forEach(photo => {
-          photo[type] = obj ? obj._id : null;
-          photo.save();
-        });
-        res.send({ message: 'Ok' });
-      }
-    })
-    .catch(err => res.status(500).send(err));
+      const deletePhotoParams = makeDeletePhotosParams(photos, deleteParams);
+      await s3.deleteObjects(deletePhotoParams).promise();
+
+      photos.forEach(photo => {
+        photo[type] = obj ? obj._id : null;
+        photo.save();
+      });
+    }
+
+    photos.forEach(photo => {
+      photo[type] = obj ? obj._id : null;
+      photo.save();
+    });
+
+    res.send({ message: 'Photos have been edited' });
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
-export const deletePhotos = (req, res) => {
-  const { ids } = req.body;
+export const deletePhotos = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const photos = await Photo.find({ _id: { $in: ids } }).populate('session');
 
-  Photo.find({ _id: { $in: ids } })
-    .populate('session')
-    .then(photos => {
-      const deletePhotoParams = makeDeletePhotosParams(photos, deleteParams);
-      s3.deleteObjects(deletePhotoParams, function(err) {
-        if (err) res.status(500).send(err);
-        Photo.remove({ _id: { $in: ids } })
-          .then(() => res.send({ message: 'Ok' }))
-          .catch(err => res.status(500).send(err));
-      });
-    })
-    .catch(err => res.status(500).send(err));
+    const deletePhotoParams = makeDeletePhotosParams(photos, deleteParams);
+    await s3.deleteObjects(deletePhotoParams).promise();
+    await Photo.remove({ _id: { $in: ids } });
+
+    res.send({ message: 'Ok' });
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
