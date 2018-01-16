@@ -1,4 +1,3 @@
-/* global Promise */
 import s3 from '../aws';
 
 export const copyPhotos = (
