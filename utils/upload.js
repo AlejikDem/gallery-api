@@ -1,3 +1,4 @@
+/* global Promise */
 import shortid from 'shortid';
 import s3 from '../aws';
 

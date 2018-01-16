@@ -1,7 +1,5 @@
 import Photo from '../models/Photo';
-import Category from '../models/Category';
-import Session from '../models/Session';
-import config from '../config';
+import { uploadParams, deleteParams } from '../config';
 import s3 from '../aws';
 
 import {
@@ -11,15 +9,6 @@ import {
 } from '../utils/upload';
 import { copyPhotos } from '../utils/edit';
 import { makeDeletePhotosParams } from '../utils/delete';
-
-const uploadParams = {
-  ACL: 'public-read',
-  Bucket: config.bucketName,
-};
-
-const deleteParams = {
-  Bucket: config.bucketName,
-};
 
 export const getPhotos = (req, res) => {
   const { filter, page } = req.query;
@@ -65,14 +54,14 @@ export const editPhotos = (req, res) => {
     .populate('session')
     .then(photos => {
       if (type === 'session') {
-        copyPhotos(photos, obj, uploadParams)
+        copyPhotos(photos, obj.name, uploadParams)
           .then(() => {
             const deletePhotoParams = makeDeletePhotosParams(
               photos,
               deleteParams,
             );
 
-            s3.deleteObjects(deletePhotoParams, function(err, data) {
+            s3.deleteObjects(deletePhotoParams, function(err) {
               if (err) res.status(500).send(err);
               photos.forEach(photo => {
                 photo[type] = obj ? obj._id : null;
@@ -100,7 +89,7 @@ export const deletePhotos = (req, res) => {
     .populate('session')
     .then(photos => {
       const deletePhotoParams = makeDeletePhotosParams(photos, deleteParams);
-      s3.deleteObjects(deletePhotoParams, function(err, data) {
+      s3.deleteObjects(deletePhotoParams, function(err) {
         if (err) res.status(500).send(err);
         Photo.remove({ _id: { $in: ids } })
           .then(() => res.send({ message: 'Ok' }))
