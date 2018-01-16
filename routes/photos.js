@@ -10,91 +10,85 @@ import {
 import { copyPhotos } from '../utils/edit';
 import { makeDeletePhotosParams } from '../utils/delete';
 
-export const getPhotos = (req, res) => {
-  const { filter, page } = req.query;
-  const parsedFilter = JSON.parse(filter);
-  const limit = 20;
-  const options = {
-    skip: (page - 1) * limit,
-    limit,
-  };
+export const getPhotos = async (req, res) => {
+  try {
+    const { filter, page } = req.query;
+    const parsedFilter = JSON.parse(filter);
+    const limit = 20;
+    const options = {
+      skip: (page - 1) * limit,
+      limit,
+    };
 
-  Photo.find(parsedFilter, null, options)
-    .populate('category')
-    .populate('session')
-    .then(photos => res.json(photos))
-    .catch(err => res.send(err));
+    const photos = await Photo.find(parsedFilter, null, options)
+      .populate('category')
+      .populate('session');
+
+    res.send(photos);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
-export const addPhotos = (req, res) => {
-  const { files, body: { category, session } } = req;
-  const parsedCategory = category && JSON.parse(category);
-  const parsedSession = session && JSON.parse(session);
-  const filesPreparedForUpload = prepareFilesForUpload(files, parsedSession);
+export const addPhotos = async (req, res) => {
+  try {
+    const { files, body: { category, session } } = req;
+    const parsedCategory = category && JSON.parse(category);
+    const parsedSession = session && JSON.parse(session);
+    const filesPreparedForUpload = prepareFilesForUpload(files, parsedSession);
 
-  uploadPhotos(filesPreparedForUpload, uploadParams)
-    .then(() => {
-      const filesPreparedForSave = prepareFilesForSave(
-        filesPreparedForUpload,
-        parsedCategory,
-        parsedSession,
-      );
+    await uploadPhotos(filesPreparedForUpload, uploadParams);
+    const filesPreparedForSave = prepareFilesForSave(
+      filesPreparedForUpload,
+      parsedCategory,
+      parsedSession,
+    );
 
-      Photo.insertMany(filesPreparedForSave)
-        .then(data => res.send(data))
-        .catch(err => res.status(500).send(err));
-    })
-    .catch(err => res.status(500).send(err));
+    const photos = await Photo.insertMany(filesPreparedForSave);
+    res.send(photos);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
-//Нада буде поміняти місцями - спочатку aws - потім база
-export const editPhotos = (req, res) => {
-  const { ids, field: { type, obj } } = req.body;
-  Photo.find({ _id: { $in: ids } })
-    .populate('session')
-    .then(photos => {
-      if (type === 'session') {
-        copyPhotos(photos, obj.name, uploadParams)
-          .then(() => {
-            const deletePhotoParams = makeDeletePhotosParams(
-              photos,
-              deleteParams,
-            );
+export const editPhotos = async (req, res) => {
+  try {
+    const { ids, field: { type, obj } } = req.body;
+    const photos = await Photo.find({ _id: { $in: ids } }).populate('session');
+    if (type === 'session') {
+      await copyPhotos(photos, obj.name, uploadParams);
 
-            s3.deleteObjects(deletePhotoParams, function(err) {
-              if (err) res.status(500).send(err);
-              photos.forEach(photo => {
-                photo[type] = obj ? obj._id : null;
-                photo.save();
-              });
-              res.send({ message: 'Ok' });
-            });
-          })
-          .catch(err => res.status(500).send(err));
-      } else {
-        photos.forEach(photo => {
-          photo[type] = obj ? obj._id : null;
-          photo.save();
-        });
-        res.send({ message: 'Ok' });
-      }
-    })
-    .catch(err => res.status(500).send(err));
-};
-
-export const deletePhotos = (req, res) => {
-  const { ids } = req.body;
-
-  Photo.find({ _id: { $in: ids } })
-    .populate('session')
-    .then(photos => {
       const deletePhotoParams = makeDeletePhotosParams(photos, deleteParams);
-      s3.deleteObjects(deletePhotoParams, function(err) {
-        if (err) res.status(500).send(err);
-        Photo.remove({ _id: { $in: ids } })
-          .then(() => res.send({ message: 'Ok' }))
-          .catch(err => res.status(500).send(err));
+      await s3.deleteObjects(deletePhotoParams).promise();
+
+      photos.forEach(photo => {
+        photo[type] = obj ? obj._id : null;
+        photo.save();
       });
-    })
-    .catch(err => res.status(500).send(err));
+    }
+
+    photos.forEach(photo => {
+      photo[type] = obj ? obj._id : null;
+      photo.save();
+    });
+
+    res.send({ message: 'Photos have been edited' });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+};
+
+export const deletePhotos = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const photos = await Photo.find({ _id: { $in: ids } }).populate('session');
+
+    const deletePhotoParams = makeDeletePhotosParams(photos, deleteParams);
+    await s3.deleteObjects(deletePhotoParams).promise();
+    await Photo.remove({ _id: { $in: ids } });
+
+    res.send({ message: 'Ok' });
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
