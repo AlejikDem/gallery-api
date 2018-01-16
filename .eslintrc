@@ -3,6 +3,9 @@
   "plugins": [
     "prettier"
   ],
+  "env": {
+    "node": true
+  },
   "extends": "eslint:recommended",
   "rules": {
     "prettier/prettier": ["error", {
